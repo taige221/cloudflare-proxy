@@ -1,45 +1,54 @@
-const targetHost = 'bbs.hupu.com';
-const targetUrl = `https://${targetHost}`;
+const ROUTES = {
+  '/hupu': 'bbs.hupu.com',
+  '/weibo': 'weibo.com',
+  '/twitter': 'twitter.com',
+};
+
+const DEFAULT_TARGET = 'bbs.hupu.com';
 
 addEventListener('fetch', event => {
   event.respondWith(handleRequest(event.request));
 });
 
+function matchTarget(pathname) {
+  for (const [prefix, host] of Object.entries(ROUTES)) {
+    if (pathname.startsWith(prefix)) {
+      return { host, prefix };
+    }
+  }
+  return { host: DEFAULT_TARGET, prefix: '' };
+}
+
 async function handleRequest(request) {
   const url = new URL(request.url);
-  
-  // 构造新的请求 URL，保留原路径和查询参数
-  const proxyUrl = new URL(targetUrl + url.pathname + url.search);
-  
-  // 复制原始请求头，但修改 Host 头为目标域名
+  const { host, prefix } = matchTarget(url.pathname);
+
+  const targetPath = prefix ? url.pathname.slice(prefix.length) || '/' : url.pathname;
+  const proxyUrl = new URL(`https://${host}${targetPath}${url.search}`);
+
   const headers = new Headers(request.headers);
-  headers.set('Host', targetHost);
-  // 可选：移除一些可能导致问题的头
+  headers.set('Host', host);
   headers.delete('Referer');
   headers.delete('Origin');
-  
-  // 创建新的请求
+
   const modifiedRequest = new Request(proxyUrl, {
     method: request.method,
     headers: headers,
     body: request.body,
     redirect: 'follow'
   });
-  
-  // 发送请求并返回响应
+
   try {
     const response = await fetch(modifiedRequest);
-    
-    // 创建新响应，可添加自定义 CORS 头（如果前端需要）
     const newHeaders = new Headers(response.headers);
     newHeaders.set('Access-Control-Allow-Origin', '*');
-    
+
     return new Response(response.body, {
       status: response.status,
       statusText: response.statusText,
       headers: newHeaders
     });
   } catch (error) {
-    return new Response(`代理请求失败：${error.message}`, { status: 500 });
+    return new Response(`Proxy error: ${error.message}`, { status: 500 });
   }
 }
