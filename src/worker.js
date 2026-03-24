@@ -6,10 +6,6 @@ const ROUTES = {
 
 const DEFAULT_TARGET = 'bbs.hupu.com';
 
-addEventListener('fetch', event => {
-  event.respondWith(handleRequest(event.request));
-});
-
 function matchTarget(pathname) {
   for (const [prefix, host] of Object.entries(ROUTES)) {
     if (pathname.startsWith(prefix)) {
@@ -52,3 +48,7 @@ async function handleRequest(request) {
     return new Response(`Proxy error: ${error.message}`, { status: 500 });
   }
 }
+
+export default {
+  fetch: handleRequest,
+};
