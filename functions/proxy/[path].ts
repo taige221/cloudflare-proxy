@@ -1,23 +1,18 @@
 import { handleProxyRequest } from '../../src/proxy-handler';
 
 export const onRequest = async (context: { request: Request; params: Record<string, string> }) => {
-	const { request, params } = context;
+	const { request } = context;
+	const originalUrl = new URL(request.url);
 
-	const pathParam = params.path;
+	const pathAfterProxy = originalUrl.pathname.slice('/proxy/'.length) + originalUrl.search;
 
-	let targetPath: string;
-	try {
-		const url = new URL('http://localhost');
-		url.pathname = '/' + pathParam;
-		url.search = new URL(request.url).search;
-		targetPath = url.toString().replace('http://localhost', '');
-	} catch {
-		return new Response('Invalid target URL', { status: 400, statusText: 'Bad Request' });
+	if (!pathAfterProxy) {
+		return new Response('Not Found', { status: 404 });
 	}
 
 	let targetUrl: URL;
 	try {
-		targetUrl = new URL(targetPath);
+		targetUrl = new URL(pathAfterProxy);
 	} catch {
 		return new Response('Invalid target URL', { status: 400, statusText: 'Bad Request' });
 	}
