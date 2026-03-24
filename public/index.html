@@ -1,31 +1,154 @@
 <!doctype html>
-<html lang="en">
+<html lang="zh-CN">
 	<head>
 		<meta charset="UTF-8" />
 		<meta name="viewport" content="width=device-width, initial-scale=1.0" />
-		<title>Hello, World!</title>
+		<title>Cloudflare Proxy</title>
+		<style>
+			* {
+				box-sizing: border-box;
+			}
+			body {
+				font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+				max-width: 800px;
+				margin: 0 auto;
+				padding: 2rem;
+				background: #f5f5f5;
+				color: #333;
+			}
+			h1 {
+				color: #f38020;
+			}
+			.container {
+				background: white;
+				border-radius: 8px;
+				padding: 2rem;
+				box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+			}
+			.input-group {
+				display: flex;
+				gap: 0.5rem;
+				margin-bottom: 1rem;
+			}
+			input[type="text"] {
+				flex: 1;
+				padding: 0.75rem;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				font-size: 1rem;
+			}
+			button {
+				padding: 0.75rem 1.5rem;
+				background: #f38020;
+				color: white;
+				border: none;
+				border-radius: 4px;
+				font-size: 1rem;
+				cursor: pointer;
+			}
+			button:hover {
+				background: #e07020;
+			}
+			iframe {
+				width: 100%;
+				height: 600px;
+				border: 1px solid #ddd;
+				border-radius: 4px;
+				margin-top: 1rem;
+			}
+			.hint {
+				font-size: 0.875rem;
+				color: #666;
+				margin-bottom: 1rem;
+			}
+			.error {
+				color: #dc3545;
+				padding: 1rem;
+				background: #ffe6e6;
+				border-radius: 4px;
+				margin-top: 1rem;
+				display: none;
+			}
+			.examples {
+				margin-top: 1.5rem;
+				padding-top: 1rem;
+				border-top: 1px solid #eee;
+			}
+			.examples h3 {
+				font-size: 1rem;
+				margin-bottom: 0.5rem;
+			}
+			.examples ul {
+				font-size: 0.875rem;
+				color: #666;
+			}
+			.examples li {
+				margin: 0.25rem 0;
+			}
+			.examples code {
+				background: #f5f5f5;
+				padding: 0.125rem 0.25rem;
+				border-radius: 3px;
+				font-size: 0.8rem;
+			}
+		</style>
 	</head>
 	<body>
-		<h1 id="heading"></h1>
-		<p>This page comes from a static asset stored at `public/index.html` as configured in `wrangler.jsonc`.</p>
-		<button id="button" type="button">Fetch a random UUID</button>
-		<output id="random" for="button"></output>
-		<script>
-			fetch('/message')
-				.then((resp) => resp.text())
-				.then((text) => {
-					const h1 = document.getElementById('heading');
-					h1.textContent = text;
-				});
+		<div class="container">
+			<h1>Cloudflare Proxy</h1>
+			<p>通过 Cloudflare 全球边缘网络代理访问目标网站</p>
 
-			const button = document.getElementById("button");
-			button.addEventListener("click", () => {
-				fetch('/random')
-					.then((resp) => resp.text())
-					.then((text) => {
-						const random = document.getElementById('random');
-						random.textContent = text;
-					});
+			<div class="input-group">
+				<input type="text" id="url-input" placeholder="输入网址，如 https://www.google.com" />
+				<button onclick="loadUrl()">访问</button>
+			</div>
+
+			<p class="hint">或者直接在地址栏访问：<code id="proxy-prefix"></code> + 目标网址</p>
+
+			<div class="error" id="error"></div>
+
+			<iframe id="proxy-frame" sandbox="allow-scripts allow-same-origin allow-forms allow-popups"></iframe>
+
+			<div class="examples">
+				<h3>示例链接</h3>
+				<ul>
+					<li><a href="javascript:void(0)" onclick="loadUrl('https://www.google.com')">Google</a></li>
+					<li><a href="javascript:void(0)" onclick="loadUrl('https://twitter.com')">Twitter / X</a></li>
+					<li><a href="javascript:void(0)" onclick="loadUrl('https://bbs.hupu.com')">虎扑BBS</a></li>
+				</ul>
+			</div>
+		</div>
+
+		<script>
+			const proxyPrefix = location.pathname.replace(/\/[^/]*$/, '/proxy/');
+			document.getElementById('proxy-prefix').textContent = location.origin + proxyPrefix;
+
+			function loadUrl(url) {
+				const input = document.getElementById('url-input');
+				const targetUrl = url || input.value.trim();
+				if (!targetUrl) return;
+
+				const errorDiv = document.getElementById('error');
+				const iframe = document.getElementById('proxy-frame');
+
+				errorDiv.style.display = 'none';
+				iframe.src = proxyPrefix + targetUrl;
+			}
+
+			document.getElementById('url-input').addEventListener('keypress', (e) => {
+				if (e.key === 'Enter') loadUrl();
+			});
+
+			document.getElementById('proxy-frame').addEventListener('load', () => {
+				try {
+					const iframe = document.getElementById('proxy-frame');
+					const errorDiv = document.getElementById('error');
+					if (iframe.contentDocument && iframe.contentDocument.title === '404 Not Found') {
+						errorDiv.textContent = '加载失败，请检查网址是否正确';
+						errorDiv.style.display = 'block';
+					}
+				} catch (e) {
+				}
 			});
 		</script>
 	</body>
