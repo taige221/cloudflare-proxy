@@ -1,6 +1,0 @@
-name = "proxy"
-main = "src/worker.js"
-compatibility_date = "2026-03-24"
-
-[vars]
-DEFAULT_TARGET = "bbs.hupu.com"
