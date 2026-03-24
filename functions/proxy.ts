@@ -4,25 +4,17 @@ export const onRequest = async (context: { request: Request }) => {
 	const { request } = context;
 	const url = new URL(request.url);
 
-	let pathAfterProxy = url.pathname.slice('/proxy/'.length) + url.search;
+	const targetUrlStr = url.searchParams.get('url');
 
-	if (pathAfterProxy.startsWith('/')) {
-		pathAfterProxy = pathAfterProxy.slice(1);
-	}
-
-	if (!pathAfterProxy) {
-		return new Response('Missing target URL. Usage: /proxy/https://example.com', { status: 400 });
+	if (!targetUrlStr) {
+		return new Response('Missing url parameter. Usage: /proxy?url=https://example.com', { status: 400 });
 	}
 
 	let targetUrl: URL;
 	try {
-		targetUrl = new URL(pathAfterProxy);
+		targetUrl = new URL(targetUrlStr);
 	} catch {
-		try {
-			targetUrl = new URL(`https://${pathAfterProxy}`);
-		} catch {
-			return new Response('Invalid target URL', { status: 400 });
-		}
+		return new Response('Invalid target URL', { status: 400 });
 	}
 
 	return handleProxyRequest({ request, targetUrl });

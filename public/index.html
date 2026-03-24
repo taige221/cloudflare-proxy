@@ -103,7 +103,7 @@
 				<button onclick="loadUrl()">访问</button>
 			</div>
 
-			<p class="hint">或者直接在地址栏访问：<code id="proxy-prefix"></code> + 目标网址</p>
+			<p class="hint">直接访问格式：<code id="proxy-prefix"></code>?url=目标网址</p>
 
 			<div class="error" id="error"></div>
 
@@ -120,8 +120,7 @@
 		</div>
 
 		<script>
-			const proxyPrefix = location.pathname.replace(/\/[^/]*$/, '/proxy/');
-			document.getElementById('proxy-prefix').textContent = location.origin + proxyPrefix;
+			const proxyBase = location.pathname.replace(/\/[^/]*$/, '') + '/proxy';
 
 			function loadUrl(url) {
 				const input = document.getElementById('url-input');
@@ -132,7 +131,7 @@
 				const iframe = document.getElementById('proxy-frame');
 
 				errorDiv.style.display = 'none';
-				iframe.src = proxyPrefix + targetUrl;
+				iframe.src = proxyBase + '?url=' + encodeURIComponent(targetUrl);
 			}
 
 			document.getElementById('url-input').addEventListener('keypress', (e) => {
