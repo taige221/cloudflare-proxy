@@ -16,26 +16,26 @@ describe('HTML Rewriter', () => {
 
 		it('rewrites absolute URLs with http', () => {
 			const result = rewriteUrl('https://cdn.example.com/image.png', targetOrigin, baseUrl);
-			expect(result).toContain('/proxy/');
+			expect(result).toContain('/proxy?url=');
 			expect(result).toContain('cdn.example.com');
 		});
 
 		it('rewrites root-relative URLs', () => {
 			const result = rewriteUrl('/static/app.js', targetOrigin, baseUrl);
-			expect(result).toContain('/proxy/');
+			expect(result).toContain('/proxy?url=');
 			expect(result).toContain('example.com');
-			expect(result).toContain('/static/app.js');
+			expect(decodeURIComponent(result)).toContain('/static/app.js');
 		});
 
 		it('rewrites protocol-relative URLs', () => {
 			const result = rewriteUrl('//cdn.example.com/image.png', targetOrigin, baseUrl);
-			expect(result).toContain('/proxy/');
+			expect(result).toContain('/proxy?url=');
 			expect(result).toContain('cdn.example.com');
 		});
 
 		it('rewrites relative URLs', () => {
 			const result = rewriteUrl('./image.png', targetOrigin, baseUrl);
-			expect(result).toContain('/proxy/');
+			expect(result).toContain('/proxy?url=');
 			expect(result).toContain('example.com');
 		});
 	});
@@ -49,51 +49,64 @@ describe('HTML Rewriter', () => {
 		it('rewrites script src attributes', () => {
 			const html = '<html><head><script src="/js/app.js"></script></head></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/js/app.js');
+			expect(result).toContain('/proxy?url=');
+			expect(result).toContain('example.com');
+			expect(decodeURIComponent(result)).toContain('/js/app.js');
 		});
 
 		it('rewrites link href attributes', () => {
 			const html = '<html><head><link href="/css/style.css" rel="stylesheet"></head></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/css/style.css');
+			expect(result).toContain('/proxy?url=');
+			expect(result).toContain('example.com');
+			expect(decodeURIComponent(result)).toContain('/css/style.css');
 		});
 
 		it('rewrites img src attributes', () => {
 			const html = '<html><body><img src="/images/logo.png"></body></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/images/logo.png');
+			expect(result).toContain('/proxy?url=');
+			expect(result).toContain('example.com');
+			expect(decodeURIComponent(result)).toContain('/images/logo.png');
 		});
 
 		it('rewrites img srcset attributes', () => {
 			const html = '<html><body><img src="/img.png" srcset="/img-2x.png 2x, /img-3x.png 3x"></body></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/img-2x.png');
-			expect(result).toContain('/proxy/https://example.com/img-3x.png');
+			expect(result).toContain('/proxy?url=');
+			expect(decodeURIComponent(result)).toContain('img-2x.png');
+			expect(decodeURIComponent(result)).toContain('img-3x.png');
 		});
 
 		it('rewrites iframe src attributes', () => {
 			const html = '<html><body><iframe src="/embed/video"></iframe></body></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/embed/video');
+			expect(result).toContain('/proxy?url=');
+			expect(result).toContain('example.com');
+			expect(decodeURIComponent(result)).toContain('/embed/video');
 		});
 
 		it('rewrites video poster attribute', () => {
 			const html = '<html><body><video poster="/thumb.png"></video></body></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/thumb.png');
+			expect(result).toContain('/proxy?url=');
+			expect(result).toContain('example.com');
+			expect(decodeURIComponent(result)).toContain('/thumb.png');
 		});
 
 		it('rewrites CSS url() in style attributes', () => {
 			const html = '<html><body><div style="background-image: url(/bg.png)"></div></body></html>';
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/bg.png');
+			expect(result).toContain('/proxy?url=');
+			expect(result).toContain('example.com');
+			expect(decodeURIComponent(result)).toContain('/bg.png');
 		});
 
 		it('does not rewrite URLs with data:', () => {
 			const html = '<html><body><img src="data:image/gif;base64,Rg=="></body></html>';
 			const result = rewriteHtml(html, options);
 			expect(result).toContain('data:image/gif;base64,Rg==');
-			expect(result).not.toContain('/proxy/');
+			expect(result).not.toContain('/proxy?url=');
 		});
 
 		it('handles multiple elements', () => {
@@ -110,10 +123,11 @@ describe('HTML Rewriter', () => {
 				</html>
 			`;
 			const result = rewriteHtml(html, options);
-			expect(result).toContain('/proxy/https://example.com/style.css');
-			expect(result).toContain('/proxy/https://example.com/app.js');
-			expect(result).toContain('/proxy/https://example.com/img.png');
-			expect(result).toContain('/proxy/https://example.com/bg.jpg');
+			expect(result).toContain('/proxy?url=');
+			expect(decodeURIComponent(result)).toContain('style.css');
+			expect(decodeURIComponent(result)).toContain('app.js');
+			expect(decodeURIComponent(result)).toContain('img.png');
+			expect(decodeURIComponent(result)).toContain('bg.jpg');
 		});
 
 		it('preserves other HTML attributes', () => {

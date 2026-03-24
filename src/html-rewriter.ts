@@ -1,4 +1,5 @@
-const PROXY_PREFIX = '/proxy/';
+const PROXY_BASE = '/proxy';
+const PROXY_PARAM = 'url';
 
 interface RewriteOptions {
 	baseUrl: string;
@@ -116,23 +117,21 @@ export function rewriteUrl(url: string, targetOrigin: string, baseUrl: string): 
 	}
 
 	try {
+		let targetFullUrl: string;
+
 		if (url.startsWith('//')) {
 			const withProtocol = `${new URL(baseUrl).protocol}${url}`;
-			const parsed = new URL(withProtocol);
-			return `${PROXY_PREFIX}${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
+			targetFullUrl = withProtocol;
+		} else if (url.startsWith('/')) {
+			targetFullUrl = `${targetOrigin}${url}`;
+		} else if (url.startsWith('http://') || url.startsWith('https://')) {
+			targetFullUrl = url;
+		} else {
+			const resolved = new URL(url, baseUrl);
+			targetFullUrl = `${resolved.protocol}//${resolved.host}${resolved.pathname}${resolved.search}`;
 		}
 
-		if (url.startsWith('/')) {
-			return `${PROXY_PREFIX}${targetOrigin}${url}`;
-		}
-
-		if (url.startsWith('http://') || url.startsWith('https://')) {
-			const parsed = new URL(url);
-			return `${PROXY_PREFIX}${parsed.protocol}//${parsed.host}${parsed.pathname}${parsed.search}`;
-		}
-
-		const resolved = new URL(url, baseUrl);
-		return `${PROXY_PREFIX}${resolved.protocol}//${resolved.host}${resolved.pathname}${resolved.search}`;
+		return `${PROXY_BASE}?${PROXY_PARAM}=${encodeURIComponent(targetFullUrl)}`;
 	} catch {
 		return url;
 	}
